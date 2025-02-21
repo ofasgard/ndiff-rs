@@ -242,7 +242,7 @@ impl fmt::Display for PortsWrapper {
 		}
 		
 		if output.len() == 0 {
-			return write!(f, "<none>");
+			return write!(f, "<nothing to show>");
 		}
 		
 		write!(f, "{}", output.join(", "))
@@ -261,7 +261,7 @@ impl fmt::Display for AddressesWrapper {
 		}
 
 		if output.len() == 0 {
-			return write!(f, "<none>");
+			return write!(f, "<nothing to show>");
 		}
 		
 		write!(f, "{}", output.join(", "))
@@ -276,7 +276,7 @@ impl fmt::Display for HostnamesWrapper {
 		}
 
 		if output.len() == 0 {
-			return write!(f, "<none>");
+			return write!(f, "<nothing to show>");
 		}
 		
 		write!(f, "{}", output.join(", "))
