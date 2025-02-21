@@ -316,7 +316,7 @@ impl fmt::Display for HostDelta {
 		let display_str = match &self {
 			HostDelta::Changed(x) => format!("[*] Changed Host: {}\n{}\n", x.title, x.to_string()),
 			HostDelta::Unchanged(x) => format!("[-] Unchanged Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
-			HostDelta::Gone(x) => format!("[?] Gone Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
+			HostDelta::Gone(x) => format!("[?] Gone Host: {}\n\n", HostWrapper(x.clone()).get_title()),
 			HostDelta::New(x) => format!("[+] New Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string())
 		};
 		write!(f, "{}", display_str)
