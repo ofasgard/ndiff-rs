@@ -8,8 +8,8 @@ use nmap_xml_parser::NmapResults;
 #[derive(Parser, Debug)]
 #[command(version, about = "A diffing tool for NMap scans in XML format.", long_about = None)]
 struct Args {
-	left_path: String,
-	right_path: String
+	left_scan: String,
+	right_scan: String
 }
 
 #[derive(Debug)]
@@ -42,14 +42,14 @@ fn get_time(scan : &NmapResults) -> String {
 fn main() {
 	let args = Args::parse();
 	
-	let left = match load_scan(&args.left_path) {
+	let left = match load_scan(&args.left_scan) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse {}: {:?}", args.left_path, e); return; }
+		Err(e) => { println!("Failed to parse {}: {:?}", args.left_scan, e); return; }
 	};
 	
-	let right = match load_scan(&args.right_path) {
+	let right = match load_scan(&args.right_scan) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse '{}': {:?}", args.right_path, e); return; }
+		Err(e) => { println!("Failed to parse '{}': {:?}", args.right_scan, e); return; }
 	};
 	
 	println!("Left Scan: {}", get_time(&left)); 
@@ -66,4 +66,4 @@ fn main() {
 
 // TODO
 // options: display all (default), display new hosts, display gone hosts, display changed hosts
-// also, a JSON output option
+// also, a JSON output option (one line per host)
