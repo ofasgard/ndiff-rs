@@ -37,7 +37,7 @@ fn load_scans(folder_str : &str) -> Vec<NmapResults> {
 
 fn main() {
 	let scans = load_scans("scans/");
-	let deltas = HostDelta::from_scans(&scans[0], &scans[scans.len() - 1]);
+	let deltas = HostDelta::from_scans(&scans[scans.len() - 2], &scans[scans.len() - 1]);
 	for delta in &deltas {
 		print!("{}", delta.to_string());
 	}
@@ -45,3 +45,4 @@ fn main() {
 
 // CLI provided with 2 files to compare
 // options: display all (default), display new hosts, display gone hosts, display changed hosts
+// should display timestamps extracted from NmapResults

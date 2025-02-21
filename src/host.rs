@@ -1,20 +1,18 @@
-// TODO: include and display timestamp of scans in HostDelta
-// TODO: improve/condense the display format, the current version is just a working prototype
 // TODO: within a HostDiff, remove all ports that are identical i.e. tcp 80 (conn-refused) [http] => tcp 80 (conn-refused) [http]
+// TODO: improve/condense the display format, the current version is just a working prototype
 
 use std::fmt;
 
 use nmap_xml_parser::NmapResults;
 use nmap_xml_parser::host::Host;
 use nmap_xml_parser::host::HostStatus;
-use nmap_xml_parser::port::PortInfo;
 use nmap_xml_parser::port::Port;
 use nmap_xml_parser::host::Address;
 use nmap_xml_parser::host::Hostname;
 
 pub struct HostWrapper(pub Host);
 pub struct HostStatusWrapper(pub HostStatus);
-pub struct PortInfoWrapper(pub PortInfo);
+pub struct PortsWrapper(pub Vec<Port>);
 pub struct AddressesWrapper(pub Vec<Address>);
 pub struct HostnamesWrapper(pub Vec<Hostname>);
 
@@ -36,7 +34,7 @@ impl HostWrapper {
 pub struct HostDiff {
 	pub title: String,
 	pub status: Option<(HostStatus,HostStatus)>,
-	pub portinfo: Option<(PortInfo,PortInfo)>,
+	pub ports: Option<(Vec<Port>,Vec<Port>)>,
 	pub addresses: Option<(Vec<Address>,Vec<Address>)>,
 	pub hostnames: Option<(Vec<Hostname>,Vec<Hostname>)>
 }
@@ -49,8 +47,11 @@ impl HostDiff {
 			false => Some((left.status.clone(), right.status.clone())),
 			true => None
 		};
-		let portinfo = match PortInfoWrapper(left.port_info.clone()) == PortInfoWrapper(right.port_info.clone()) {
-			false => Some((left.port_info.clone(), right.port_info.clone())),
+		
+		let left_ports : Vec<Port> = left.port_info.ports().map(|x| x.clone()).collect();
+		let right_ports : Vec<Port> = right.port_info.ports().map(|x| x.clone()).collect();
+		let ports = match PortsWrapper(left_ports.clone()) == PortsWrapper(right_ports.clone()) {
+			false => Some((left_ports, right_ports)),
 			true => None
 		};
 		
@@ -71,7 +72,7 @@ impl HostDiff {
 		HostDiff {
 			title: title,
 			status: status,
-			portinfo: portinfo,
+			ports: ports,
 			addresses: addresses,
 			hostnames: hostnames
 		}
@@ -147,11 +148,10 @@ impl PartialEq for HostStatusWrapper {
 	}
 }
 
-impl PartialEq for PortInfoWrapper {
-	fn eq(&self, other: &PortInfoWrapper) -> bool {
-		// Convert both iterators into a vector of ports.
-		let mut left : Vec<&Port> = self.0.ports().collect();
-		let mut right : Vec<&Port> = other.0.ports().collect();
+impl PartialEq for PortsWrapper {
+	fn eq(&self, other: &PortsWrapper) -> bool {
+		let mut left = self.0.clone();
+		let mut right = other.0.clone();
 		
 		// Sort and compare the vectors to determine whether the port list is identical.
 		left.sort_by_key(|x| { x.port_number });
@@ -188,8 +188,8 @@ impl fmt::Display for HostWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "Status: {} ({})\n\n", self.0.status.state.to_string(), self.0.status.reason)?;
 		
-		let portinfo = PortInfoWrapper(self.0.port_info.clone());
-		write!(f, "Ports:\n\n{}\n", portinfo.to_string())?;
+		let ports = PortsWrapper(self.0.port_info.ports().map(|x| x.clone()).collect());
+		write!(f, "Ports:\n\n{}\n", ports.to_string())?;
 		
 		let addresses = AddressesWrapper(self.0.addresses().map(|x| x.clone()).collect());
 		write!(f, "Addresses:\n\n{}\n", addresses.to_string())?;
@@ -201,9 +201,9 @@ impl fmt::Display for HostWrapper {
 	}
 }
 
-impl fmt::Display for PortInfoWrapper {
+impl fmt::Display for PortsWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		for port in self.0.ports() {
+		for port in &self.0 {
 			write!(f, "{} {} ({})", port.protocol.to_string(), port.port_number, port.status.reason)?;
 			if let Some(serviceinfo) = &port.service_info {
 				write!(f, " [{}]", serviceinfo.name)?;
@@ -242,9 +242,9 @@ impl fmt::Display for HostDiff {
 			write!(f, "Status: {} ({}) => {} ({})\n\n", status.0.state.to_string(), status.0.reason, status.1.state.to_string(), status.1.reason)?;
 		}
 		
-		if let Some(portinfo) = &self.portinfo {
-			let left = PortInfoWrapper(portinfo.0.clone());
-			let right = PortInfoWrapper(portinfo.1.clone());
+		if let Some(ports) = &self.ports {
+			let left = PortsWrapper(ports.0.clone());
+			let right = PortsWrapper(ports.1.clone());
 			write!(f, "Old Ports:\n\n{}\n", left.to_string())?;
 			write!(f, "New Ports:\n\n{}\n", right.to_string())?;
 		}
