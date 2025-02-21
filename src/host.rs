@@ -150,15 +150,7 @@ pub struct HostDiff {
 
 impl HostDiff {
 	pub fn from_hosts(left : &Host, right : &Host) -> HostDiff {
-		let host_name = match right.host_names().next() { Some(x) => x.name.to_string(), None => "<no hostname>".to_string() };
-		let address = match right.addresses().next() {
-			Some(addr) => match addr {
-				Address::IpAddr(x) => x.to_string(),
-				Address::MacAddr(x) => x.to_string()
-			}
-			None => "<no address>".to_string()
-		};
-		let title = format!("{} ({})", host_name, address);
+		let title = HostWrapper(right.clone()).get_title();
 	
 		let status = match HostStatusWrapper(left.status.clone()) == HostStatusWrapper(right.status.clone()) {
 			false => Some((left.status.clone(), right.status.clone())),
