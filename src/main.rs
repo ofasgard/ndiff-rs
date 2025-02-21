@@ -1,4 +1,5 @@
 use std::fs;
+use chrono::DateTime;
 use clap::Parser;
 
 use ndiff_rs::host::HostDelta;
@@ -31,6 +32,13 @@ fn load_scan(path : &str) -> Result<NmapResults,Error> {
 	Ok(results)
 }
 
+fn get_time(scan : &NmapResults) -> String {
+	match DateTime::from_timestamp(scan.scan_start_time, 0) {
+		Some(x) => format!("{}", x),
+		None => "<unknown start time>".to_string()
+	}
+}
+
 fn main() {
 	let args = Args::parse();
 	
@@ -44,6 +52,10 @@ fn main() {
 		Err(e) => { println!("Failed to parse '{}': {:?}", args.right_path, e); return; }
 	};
 	
+	println!("Left Scan: {}", get_time(&left)); 
+	println!("Right Scan: {}", get_time(&right));
+	println!("");
+	
 	
 	let deltas = HostDelta::from_scans(&left, &right);
 	for delta in &deltas {
@@ -54,5 +66,4 @@ fn main() {
 
 // TODO
 // options: display all (default), display new hosts, display gone hosts, display changed hosts
-// should also display timestamps extracted from NmapResults
 // also, a JSON output option
