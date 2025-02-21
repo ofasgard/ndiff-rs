@@ -1,3 +1,9 @@
+// TODO: include and display timestamp of scans in HostDelta
+// TODO: improve/condense the display format, the current version is just a working prototype
+// TODO: within a HostDiff, remove all ports that are identical i.e. tcp 80 (conn-refused) [http] => tcp 80 (conn-refused) [http]
+
+use std::fmt;
+
 use nmap_xml_parser::NmapResults;
 use nmap_xml_parser::host::Host;
 use nmap_xml_parser::host::HostStatus;
@@ -45,6 +51,19 @@ impl PartialEq for PortInfoWrapper {
 	}
 }
 
+impl fmt::Display for PortInfoWrapper {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for port in self.0.ports() {
+			write!(f, "{} {} ({})", port.protocol.to_string(), port.port_number, port.status.reason)?;
+			if let Some(serviceinfo) = &port.service_info {
+				write!(f, " [{}]", serviceinfo.name)?;
+			}
+			write!(f, "\n")?;
+		}
+		Ok(())
+	}
+}
+
 impl PartialEq for AddressesWrapper {
 	fn eq(&self, other: &AddressesWrapper) -> bool {
 		// Compare the addresses, irrespective of order, for equality.
@@ -53,6 +72,19 @@ impl PartialEq for AddressesWrapper {
 			if !other.0.contains(&address) { eq = false; }
 		}
 		eq
+	}
+}
+
+impl fmt::Display for AddressesWrapper {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for address in &self.0 {
+			let addr_str = match address {
+				Address::IpAddr(x) => x.to_string(),
+				Address::MacAddr(x) => x.to_string()
+			};
+			write!(f, "{}\n", addr_str)?;
+		}
+		Ok(())
 	}
 }
 
@@ -67,8 +99,18 @@ impl PartialEq for HostnamesWrapper {
 	}
 }
 
+impl fmt::Display for HostnamesWrapper {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for hostname in &self.0 {
+			write!(f, "{}\n", hostname.name)?;
+		}
+		Ok(())
+	}
+}
+
 #[derive(Debug)]
 pub struct HostDiff {
+	pub title: String,
 	pub status: Option<(HostStatus,HostStatus)>,
 	pub portinfo: Option<(PortInfo,PortInfo)>,
 	pub addresses: Option<(Vec<Address>,Vec<Address>)>,
@@ -77,6 +119,16 @@ pub struct HostDiff {
 
 impl HostDiff {
 	pub fn from_hosts(left : &Host, right : &Host) -> HostDiff {
+		let host_name = match right.host_names().next() { Some(x) => x.name.to_string(), None => "<no hostname>".to_string() };
+		let address = match right.addresses().next() {
+			Some(addr) => match addr {
+				Address::IpAddr(x) => x.to_string(),
+				Address::MacAddr(x) => x.to_string()
+			}
+			None => "<no address>".to_string()
+		};
+		let title = format!("{} ({})", host_name, address);
+	
 		let status = match HostStatusWrapper(left.status.clone()) == HostStatusWrapper(right.status.clone()) {
 			false => Some((left.status.clone(), right.status.clone())),
 			true => None
@@ -101,11 +153,43 @@ impl HostDiff {
 		};
 				
 		HostDiff {
+			title: title,
 			status: status,
 			portinfo: portinfo,
 			addresses: addresses,
 			hostnames: hostnames
 		}
+	}
+}
+
+impl fmt::Display for HostDiff {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		if let Some(status) = &self.status {
+			write!(f, "{} ({}) => {} ({})\n", status.0.state.to_string(), status.0.reason, status.1.state.to_string(), status.1.reason)?;
+		}
+		
+		if let Some(portinfo) = &self.portinfo {
+			let left = PortInfoWrapper(portinfo.0.clone());
+			let right = PortInfoWrapper(portinfo.1.clone());
+			write!(f, "Old Ports:\n\n{}\n", left.to_string())?;
+			write!(f, "New Ports:\n\n{}\n", right.to_string())?;
+		}
+		
+		if let Some(addresses) = &self.addresses {
+			let left = AddressesWrapper(addresses.0.clone());
+			let right = AddressesWrapper(addresses.1.clone());
+			write!(f, "Old Addresses:\n\n{}\n", left.to_string())?;
+			write!(f, "New Addresses:\n\n{}\n", right.to_string())?;
+		}
+		
+		if let Some(hostnames) = &self.hostnames {
+			let left = HostnamesWrapper(hostnames.0.clone());
+			let right = HostnamesWrapper(hostnames.1.clone());
+			write!(f, "Old Hostnames:\n\n{}\n", left.to_string())?;
+			write!(f, "New Hostnames:\n\n{}\n", right.to_string())?;
+		}
+		
+		Ok(())
 	}
 }
 
@@ -153,5 +237,16 @@ impl HostDelta {
 		}
 	
 		output
+	}
+}
+
+impl fmt::Display for HostDelta {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let display_str = match &self {
+			HostDelta::Changed(x) => format!("Changed Host: {}\n\n{}\n", x.title, x.to_string()),
+			HostDelta::Gone(x) => todo!(),
+			HostDelta::New(x) => todo!()
+		};
+		write!(f, "{}", display_str)
 	}
 }

@@ -3,7 +3,6 @@ use std::path::Path;
 
 use ndiff_rs::host::HostDelta;
 use nmap_xml_parser::NmapResults;
-use nmap_xml_parser::host::Host;
 
 fn load_scans(folder_str : &str) -> Vec<NmapResults> {
 	// Enumerate files in scan folder.
@@ -38,6 +37,8 @@ fn load_scans(folder_str : &str) -> Vec<NmapResults> {
 
 fn main() {
 	let scans = load_scans("scans/");
-	let deltas = HostDelta::from_scans(&scans[0], &scans[scans.len() - 1]);
-	dbg!("{}", deltas);
+	let deltas = HostDelta::from_scans(&scans[scans.len() - 2], &scans[scans.len() - 1]);
+	for delta in &deltas {
+		println!("{}", delta.to_string());
+	}
 }
