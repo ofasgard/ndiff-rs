@@ -1,5 +1,3 @@
-// TODO: improve/condense the display format, the current version is just a working prototype
-
 use std::fmt;
 
 use nmap_xml_parser::NmapResults;
@@ -217,16 +215,16 @@ impl PartialEq for HostnamesWrapper {
 
 impl fmt::Display for HostWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		write!(f, "Status: {} ({})\n\n", self.0.status.state.to_string(), self.0.status.reason)?;
+		write!(f, "Status: {} ({})\n", self.0.status.state.to_string(), self.0.status.reason)?;
 		
 		let ports = PortsWrapper(self.0.port_info.ports().map(|x| x.clone()).collect());
-		write!(f, "Ports:\n\n{}\n", ports.to_string())?;
+		write!(f, "Ports: {}\n", ports.to_string())?;
 		
 		let addresses = AddressesWrapper(self.0.addresses().map(|x| x.clone()).collect());
-		write!(f, "Addresses:\n\n{}\n", addresses.to_string())?;
+		write!(f, "Addresses: {}\n", addresses.to_string())?;
 		
 		let hostnames = HostnamesWrapper(self.0.host_names().map(|x| x.clone()).collect());
-		write!(f, "Hostnames:\n\n{}\n", hostnames.to_string())?;
+		write!(f, "Hostnames: {}\n", hostnames.to_string())?;
 		
 		Ok(())
 	}
@@ -234,64 +232,79 @@ impl fmt::Display for HostWrapper {
 
 impl fmt::Display for PortsWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let mut output : Vec<String> = Vec::new();
 		for port in &self.0 {
-			write!(f, "{} {} ({})", port.protocol.to_string(), port.port_number, port.status.reason)?;
+			let mut port_str = format!("{} {} ({})", port.protocol.to_string(), port.port_number, port.status.reason);
 			if let Some(serviceinfo) = &port.service_info {
-				write!(f, " [{}]", serviceinfo.name)?;
+				port_str.push_str(format!(" [{}]", serviceinfo.name).as_str());
 			}
-			write!(f, "\n")?;
+			output.push(port_str);
 		}
-		Ok(())
+		
+		if output.len() == 0 {
+			return write!(f, "<none>");
+		}
+		
+		write!(f, "{}", output.join(", "))
 	}
 }
 
 impl fmt::Display for AddressesWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let mut output : Vec<String> = Vec::new();
 		for address in &self.0 {
 			let addr_str = match address {
 				Address::IpAddr(x) => x.to_string(),
 				Address::MacAddr(x) => x.to_string()
 			};
-			write!(f, "{}\n", addr_str)?;
+			output.push(addr_str);
 		}
-		Ok(())
+
+		if output.len() == 0 {
+			return write!(f, "<none>");
+		}
+		
+		write!(f, "{}", output.join(", "))
 	}
 }
 
 impl fmt::Display for HostnamesWrapper {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let mut output : Vec<String> = Vec::new();
 		for hostname in &self.0 {
-			write!(f, "{}\n", hostname.name)?;
+			output.push(hostname.name.to_string());
 		}
-		Ok(())
+
+		if output.len() == 0 {
+			return write!(f, "<none>");
+		}
+		
+		write!(f, "{}", output.join(", "))
 	}
 }
 
 impl fmt::Display for HostDiff {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		if let Some(status) = &self.status {
-			write!(f, "Status: {} ({}) => {} ({})\n\n", status.0.state.to_string(), status.0.reason, status.1.state.to_string(), status.1.reason)?;
+			write!(f, "Status: {} ({}) => {} ({})\n", status.0.state.to_string(), status.0.reason, status.1.state.to_string(), status.1.reason)?;
 		}
 		
 		if let Some(ports) = &self.ports {
 			let left = PortsWrapper(ports.0.clone());
 			let right = PortsWrapper(ports.1.clone());
-			write!(f, "Left Ports:\n\n{}\n", left.to_string())?;
-			write!(f, "Right Ports:\n\n{}\n", right.to_string())?;
+			write!(f, "Ports: {} => {}\n", left.to_string(), right.to_string())?;
 		}
 		
 		if let Some(addresses) = &self.addresses {
 			let left = AddressesWrapper(addresses.0.clone());
 			let right = AddressesWrapper(addresses.1.clone());
-			write!(f, "Left Addresses:\n\n{}\n", left.to_string())?;
-			write!(f, "Right Addresses:\n\n{}\n", right.to_string())?;
+			write!(f, "Addresses:{} => {}\n", left.to_string(), right.to_string())?;
 		}
 		
 		if let Some(hostnames) = &self.hostnames {
 			let left = HostnamesWrapper(hostnames.0.clone());
 			let right = HostnamesWrapper(hostnames.1.clone());
-			write!(f, "Left Hostnames:\n\n{}\n", left.to_string())?;
-			write!(f, "Right Hostnames:\n\n{}\n", right.to_string())?;
+			write!(f, "Hostnames: {} => {}\n", left.to_string(), right.to_string())?;
 		}
 		
 		Ok(())
@@ -301,10 +314,10 @@ impl fmt::Display for HostDiff {
 impl fmt::Display for HostDelta {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let display_str = match &self {
-			HostDelta::Changed(x) => format!("Changed Host: {}\n\n{}\n", x.title, x.to_string()),
-			HostDelta::Unchanged(x) => format!("Unchanged Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
-			HostDelta::Gone(x) => format!("Gone Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
-			HostDelta::New(x) => format!("New Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string())
+			HostDelta::Changed(x) => format!("Changed Host: {}\n{}\n", x.title, x.to_string()),
+			HostDelta::Unchanged(x) => format!("Unchanged Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
+			HostDelta::Gone(x) => format!("Gone Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
+			HostDelta::New(x) => format!("New Host: {}\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string())
 		};
 		write!(f, "{}", display_str)
 	}

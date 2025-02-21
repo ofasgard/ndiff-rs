@@ -38,7 +38,7 @@ fn load_scans(folder_str : &str) -> Vec<NmapResults> {
 fn main() {
 	let scans = load_scans("scans/");
 	let deltas = HostDelta::from_scans(&scans[scans.len()-2], &scans[scans.len()-1]);
-	dbg!("{}", &scans[scans.len()-1]);
+	//let deltas = HostDelta::from_scans(&scans[0], &scans[3]);
 	for delta in &deltas {
 		print!("{}", delta.to_string());
 	}
