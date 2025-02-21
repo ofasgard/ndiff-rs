@@ -1,4 +1,3 @@
-// TODO: within a HostDiff, remove all ports that are identical i.e. tcp 80 (conn-refused) [http] => tcp 80 (conn-refused) [http]
 // TODO: improve/condense the display format, the current version is just a working prototype
 
 use std::fmt;
@@ -69,12 +68,35 @@ impl HostDiff {
 			true => None
 		};
 				
-		HostDiff {
+		let mut diff = HostDiff {
 			title: title,
 			status: status,
 			ports: ports,
 			addresses: addresses,
 			hostnames: hostnames
+		};
+		diff.remove_identical_ports();
+		
+		diff
+	}
+	
+	/// Removes all ports that are exactly identical from the right side of a diff.
+	pub fn remove_identical_ports(&mut self) {
+		if let Some(ports) = &self.ports {
+			let mut left_ports = ports.0.clone();
+			let mut right_ports = ports.1.clone();
+		
+			left_ports.retain(|port| {
+				// Returns false for any port which matches a corresponding port in the other side.
+				!ports.1.iter().any(|other_port| {(port.protocol == other_port.protocol) && (port.port_number == other_port.port_number) && (port.status == other_port.status)})
+			});
+			
+			right_ports.retain(|port| {
+				// Returns false for any port which matches a corresponding port in the other side.
+				!ports.0.iter().any(|other_port| {(port.protocol == other_port.protocol) && (port.port_number == other_port.port_number) && (port.status == other_port.status)})
+			});
+			
+			self.ports = Some((left_ports, right_ports))
 		}
 	}
 }
@@ -245,22 +267,22 @@ impl fmt::Display for HostDiff {
 		if let Some(ports) = &self.ports {
 			let left = PortsWrapper(ports.0.clone());
 			let right = PortsWrapper(ports.1.clone());
-			write!(f, "Old Ports:\n\n{}\n", left.to_string())?;
-			write!(f, "New Ports:\n\n{}\n", right.to_string())?;
+			write!(f, "Left Ports:\n\n{}\n", left.to_string())?;
+			write!(f, "Right Ports:\n\n{}\n", right.to_string())?;
 		}
 		
 		if let Some(addresses) = &self.addresses {
 			let left = AddressesWrapper(addresses.0.clone());
 			let right = AddressesWrapper(addresses.1.clone());
-			write!(f, "Old Addresses:\n\n{}\n", left.to_string())?;
-			write!(f, "New Addresses:\n\n{}\n", right.to_string())?;
+			write!(f, "Left Addresses:\n\n{}\n", left.to_string())?;
+			write!(f, "Right Addresses:\n\n{}\n", right.to_string())?;
 		}
 		
 		if let Some(hostnames) = &self.hostnames {
 			let left = HostnamesWrapper(hostnames.0.clone());
 			let right = HostnamesWrapper(hostnames.1.clone());
-			write!(f, "Old Hostnames:\n\n{}\n", left.to_string())?;
-			write!(f, "New Hostnames:\n\n{}\n", right.to_string())?;
+			write!(f, "Left Hostnames:\n\n{}\n", left.to_string())?;
+			write!(f, "Right Hostnames:\n\n{}\n", right.to_string())?;
 		}
 		
 		Ok(())
