@@ -11,7 +11,7 @@ fn load_scan(path : &str) -> NmapResults {
 }
 
 fn usage() {
-	todo!()
+	eprintln!("USAGE: ndiff-rs scan1.xml scan2.xml");
 }
 
 fn main() {
@@ -31,3 +31,4 @@ fn main() {
 // TODO: add more complex CLI options using clap
 // options: display all (default), display new hosts, display gone hosts, display changed hosts
 // should also display timestamps extracted from NmapResults
+// also, a JSON output option
