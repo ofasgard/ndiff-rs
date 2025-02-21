@@ -80,6 +80,11 @@ impl HostDiff {
 		diff
 	}
 	
+	/// Check if the two sides of the diff are identical.
+	pub fn is_unchanged(&self) -> bool {
+		self.status.is_none() && self.ports.is_none() && self.addresses.is_none() && self.hostnames.is_none()
+	}
+	
 	/// Removes all ports that are exactly identical from the right side of a diff.
 	pub fn remove_identical_ports(&mut self) {
 		if let Some(ports) = &self.ports {
@@ -105,6 +110,7 @@ impl HostDiff {
 #[derive(Debug)]
 pub enum HostDelta {
 	Changed(HostDiff),
+	Unchanged(Host),
 	Gone(Host),
 	New(Host)
 }
@@ -138,7 +144,10 @@ impl HostDelta {
 			for old_host in old.hosts() {
 				if HostWrapper(host.clone()) == HostWrapper(old_host.clone()) {
 					let diff = HostDiff::from_hosts(old_host, &host);
-					let changed = HostDelta::Changed(diff);
+					let changed = match diff.is_unchanged() {
+						true => HostDelta::Unchanged(host.clone()),
+						false => HostDelta::Changed(diff)
+					};
 					output.push(changed);
 				}
 			}
@@ -293,6 +302,7 @@ impl fmt::Display for HostDelta {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let display_str = match &self {
 			HostDelta::Changed(x) => format!("Changed Host: {}\n\n{}\n", x.title, x.to_string()),
+			HostDelta::Unchanged(x) => format!("Unchanged Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
 			HostDelta::Gone(x) => format!("Gone Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string()),
 			HostDelta::New(x) => format!("New Host: {}\n\n{}\n", HostWrapper(x.clone()).get_title(), HostWrapper(x.clone()).to_string())
 		};
