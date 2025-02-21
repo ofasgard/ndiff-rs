@@ -1,8 +1,15 @@
 use std::fs;
-use std::env;
+use clap::Parser;
 
 use ndiff_rs::host::HostDelta;
 use nmap_xml_parser::NmapResults;
+
+#[derive(Parser, Debug)]
+#[command(version, about = "A diffing tool for NMap scans in XML format.", long_about = None)]
+struct Args {
+	left_path: String,
+	right_path: String
+}
 
 #[derive(Debug)]
 pub enum Error {
@@ -24,24 +31,17 @@ fn load_scan(path : &str) -> Result<NmapResults,Error> {
 	Ok(results)
 }
 
-fn usage() {
-	eprintln!("USAGE: ndiff-rs scan1.xml scan2.xml");
-}
-
 fn main() {
-	let args : Vec<String> = env::args().collect();
-	if args.len() < 3 { return usage(); }
+	let args = Args::parse();
 	
-	let (left_path, right_path) = (&args[1], &args[2]);
-	
-	let left = match load_scan(left_path) {
+	let left = match load_scan(&args.left_path) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse {}: {:?}", left_path, e); return; }
+		Err(e) => { println!("Failed to parse {}: {:?}", args.left_path, e); return; }
 	};
 	
-	let right = match load_scan(right_path) {
+	let right = match load_scan(&args.right_path) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse '{}': {:?}", right_path, e); return; }
+		Err(e) => { println!("Failed to parse '{}': {:?}", args.right_path, e); return; }
 	};
 	
 	
@@ -52,7 +52,7 @@ fn main() {
 
 }
 
-// TODO: add more complex CLI options using clap
+// TODO
 // options: display all (default), display new hosts, display gone hosts, display changed hosts
 // should also display timestamps extracted from NmapResults
 // also, a JSON output option
