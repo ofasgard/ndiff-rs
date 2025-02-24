@@ -63,7 +63,3 @@ fn main() {
 	}
 
 }
-
-// TODO
-// options: display all (default), display new hosts, display gone hosts, display changed hosts
-// also, a JSON output option (one line per host)
