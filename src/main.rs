@@ -46,7 +46,8 @@ fn main() {
 	
 	if args.left_scan.is_none() && args.right_scan.is_none() {
 		if args.gui {
-			todo!("GUI mode has not been implemented yet!");
+			let _ = ndiff_rs::gui::run_gui();
+			return;
 		} else {
 			eprintln!("SYNTAX: ndiff-rs first.xml second.xml");
 			return;
