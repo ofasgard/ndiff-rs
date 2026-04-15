@@ -66,14 +66,16 @@ impl HostDiff {
 			true => None
 		};
 				
-		let mut diff = HostDiff {
+		let diff = HostDiff {
 			title: title,
 			status: status,
 			ports: ports,
 			addresses: addresses,
 			hostnames: hostnames
 		};
-		diff.remove_identical_ports();
+		
+		// Commented out because it's actually more confusing if we omit the "unchanged" ports.
+		// diff.remove_identical_ports();
 		
 		diff
 	}

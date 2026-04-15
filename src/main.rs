@@ -8,8 +8,10 @@ use nmap_xml_parser::NmapResults;
 #[derive(Parser, Debug)]
 #[command(version, about = "A diffing tool for NMap scans in XML format.", long_about = None)]
 struct Args {
-	left_scan: String,
-	right_scan: String
+	left_scan: Option<String>,
+	right_scan: Option<String>,
+	#[arg(short, long)]
+	gui: bool
 }
 
 #[derive(Debug)]
@@ -42,14 +44,26 @@ fn get_time(scan : &NmapResults) -> String {
 fn main() {
 	let args = Args::parse();
 	
-	let left = match load_scan(&args.left_scan) {
+	if args.left_scan.is_none() && args.right_scan.is_none() {
+		if args.gui {
+			todo!("GUI mode has not been implemented yet!");
+		} else {
+			eprintln!("SYNTAX: ndiff-rs first.xml second.xml");
+			return;
+		}
+	}
+	
+	let left_scan : String = args.left_scan.unwrap().clone();
+	let right_scan : String = args.right_scan.unwrap().clone();
+	
+	let left = match load_scan(&left_scan) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse {}: {:?}", args.left_scan, e); return; }
+		Err(e) => { println!("Failed to parse {}: {:?}", left_scan, e); return; }
 	};
 	
-	let right = match load_scan(&args.right_scan) {
+	let right = match load_scan(&right_scan) {
 		Ok(x) => x,
-		Err(e) => { println!("Failed to parse '{}': {:?}", args.right_scan, e); return; }
+		Err(e) => { println!("Failed to parse '{}': {:?}", right_scan, e); return; }
 	};
 	
 	println!("Left Scan: {}", get_time(&left)); 
