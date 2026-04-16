@@ -1,10 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 use std::fs;
+use chrono::DateTime;
 use eframe::egui;
 use egui::Layout;
 use egui::Align;
-use egui::containers::ComboBox;
 use egui::widgets::Separator;
 use rfd::FileDialog;
 
@@ -51,32 +51,38 @@ impl eframe::App for NDiffApp {
 					ui.heading("First Scan");
 					ui.add_space(32.0);
 					match &self.left_scan {
-						Some(_) => { ui.code_editor(&mut "Scan loaded!"); },
+						Some(_) => { ui.label(format!("Scan loaded!\nScan Time: {}", get_time(&self.left_scan.clone().unwrap()))); },
 						None => { 
-							ui.code_editor(&mut "Waiting for a scan...");
+							ui.label("Waiting for a scan...");
 							if ui.button("Open file...").clicked() && let Some(path) = FileDialog::new().pick_file() {
 								let path_str = path.display().to_string();
 								self.left_scan = self.load_scan(path_str, ui);
 							}
 						}
 					};
-					if self.processed { self.render_deltas(); }
+					if self.processed { 
+						self.render_deltas(); 
+					}
 				});
+				
+				ui.add(Separator::default().spacing(16.0));
 				
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
 					ui.heading("Second Scan");
 					ui.add_space(32.0);
 					match &self.right_scan {
-						Some(_) => { ui.code_editor(&mut "Scan loaded!"); },
+						Some(_) => { ui.label(format!("Scan loaded!\nScan Time: {}", get_time(&self.right_scan.clone().unwrap()))); },
 						None => { 
-							ui.code_editor(&mut "Waiting for a scan...");
+							ui.label("Waiting for a scan...");
 							if ui.button("Open file...").clicked() && let Some(path) = FileDialog::new().pick_file() {
 								let path_str = path.display().to_string();
 								self.right_scan = self.load_scan(path_str, ui);
 							}
 						}
 					};
-					if self.processed { self.render_deltas(); }
+					if self.processed {
+						self.render_deltas();
+					}
 				});
 			});
 			
@@ -89,25 +95,30 @@ impl eframe::App for NDiffApp {
 }
 
 impl NDiffApp {
-	fn load_scan(&mut self, path: String, ui: &mut egui::Ui) -> Option<NmapResults> {
+	fn load_scan(&mut self, path: String, _ui: &mut egui::Ui) -> Option<NmapResults> {
 		let content = match fs::read_to_string(path) {
 			Ok(x) => x,
-			Err(e) => {
+			Err(_) => {
 				return None; // TODO display some error
 			}
 		};
 		
 		match NmapResults::parse(&content) {
 			Ok(x) => Some(x),
-			Err(e) => {
+			Err(_) => {
 				None // TODO display some error
 			}
 		}
 	}
 	
 	fn render_deltas(&mut self) {
-		todo!();
+		// TODO
 	}
 }
 
-
+fn get_time(scan : &NmapResults) -> String {
+	match DateTime::from_timestamp(scan.scan_start_time, 0) {
+		Some(x) => format!("{}", x),
+		None => "<unknown start time>".to_string()
+	}
+}
