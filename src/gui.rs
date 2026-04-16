@@ -48,6 +48,7 @@ impl eframe::App for NDiffApp {
 			
 			ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
+					ui.set_width(320.0);
 					ui.heading("First Scan");
 					ui.add_space(32.0);
 					match &self.left_scan {
@@ -68,6 +69,7 @@ impl eframe::App for NDiffApp {
 				ui.add(Separator::default().spacing(16.0));
 				
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
+					ui.set_width(320.0);
 					ui.heading("Second Scan");
 					ui.add_space(32.0);
 					match &self.right_scan {
