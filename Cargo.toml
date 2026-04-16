@@ -9,3 +9,4 @@ clap = { version = "4.5.30", features = ["derive"] }
 eframe = "0.34.1"
 egui_extras = { version = "0.34.1", features = ["image"] }
 nmap_xml_parser = "0.3.0"
+rfd = "0.17.2"
