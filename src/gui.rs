@@ -62,7 +62,7 @@ impl eframe::App for NDiffApp {
 						}
 					};
 					if self.processed { 
-						self.render_deltas(); 
+						self.render_deltas(true, ui); 
 					}
 				});
 				
@@ -83,7 +83,7 @@ impl eframe::App for NDiffApp {
 						}
 					};
 					if self.processed {
-						self.render_deltas();
+						self.render_deltas(false, ui);
 					}
 				});
 			});
@@ -113,8 +113,15 @@ impl NDiffApp {
 		}
 	}
 	
-	fn render_deltas(&mut self) {
-		// TODO
+	fn render_deltas(&mut self, left: bool, ui: &mut egui::Ui) {
+		let index = match left {
+			true => 0,
+			false => 1
+		};
+	
+		for delta in &self.deltas {
+			ui.label(format!("{}", delta.to_string())); // TODO actually display data for left or right diff
+		}
 	}
 }
 
