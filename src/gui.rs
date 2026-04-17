@@ -17,7 +17,7 @@ use nmap_xml_parser::NmapResults;
 
 pub fn run_gui() -> eframe::Result {
 	let mut options = eframe::NativeOptions::default();
-	options.viewport = egui::ViewportBuilder::default().with_inner_size([640.0, 640.0]);
+	options.viewport = egui::ViewportBuilder::default().with_inner_size([640.0, 640.0]).with_min_inner_size([640.0, 320.0]);
 
 	eframe::run_native(
 		"ndiff-rs", // app name
@@ -46,13 +46,15 @@ impl Default for NDiffApp {
 
 impl eframe::App for NDiffApp {
 	fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+		let max_width : f32 = ui.ctx().content_rect().max.x;
+	
 		egui::CentralPanel::default().show_inside(ui, |ui| {
 			ui.label("Load two Nmap XML scans!");
 			ui.add(Separator::default().spacing(32.0));
 			
 			ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
-					ui.set_width(320.0);
+					ui.set_width(max_width / 2.0);
 					ui.heading("First Scan");
 					ui.add_space(32.0);
 					match &self.left_scan {
@@ -73,7 +75,7 @@ impl eframe::App for NDiffApp {
 				ui.add(Separator::default().spacing(16.0));
 				
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
-					ui.set_width(320.0);
+					ui.set_width(max_width / 2.0);
 					ui.heading("Second Scan");
 					ui.add_space(32.0);
 					match &self.right_scan {
