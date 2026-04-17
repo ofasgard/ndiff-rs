@@ -136,37 +136,38 @@ impl NDiffApp {
 		};
 	
 		ui.add(Separator::default().spacing(16.0));
+		ui.label(egui::RichText::new(format!("{}", diff.title)).underline().color(report_color));
 		
-		let mut report : String = format!("{}", diff.title);
+		let mut report : String = String::new();
 		
 		if let Some(status) = &diff.status {
 			let current_side = match left { true => status.0.clone(), false => status.1.clone() };
-			let status_str = format!("\n| Status: {} ({})", current_side.state.to_string(), current_side.reason);
+			let status_str = format!("\t| Status: {} ({})\n", current_side.state.to_string(), current_side.reason);
 			report.push_str(&status_str);
 		}
 		
 		if let Some(ports) = &diff.ports {
 			let current_side = match left { true => ports.0.clone(), false => ports.1.clone() };
 			let wrapped_ports = PortsWrapper(current_side);
-			let ports_str = format!("\n| Ports: {}", wrapped_ports.to_string());
+			let ports_str = format!("\t| Ports: {}\n", wrapped_ports.to_string());
 			report.push_str(&ports_str);
 		}
 		
 		if let Some(addresses) = &diff.addresses {
 			let current_side = match left { true => addresses.0.clone(), false => addresses.1.clone() };
 			let wrapped_addresses = AddressesWrapper(current_side);
-			let addresses_str = format!("\n| Addresses: {}", wrapped_addresses.to_string());
+			let addresses_str = format!("\t| Addresses: {}\n", wrapped_addresses.to_string());
 			report.push_str(&addresses_str);
 		}
 		
 		if let Some(hostnames) = &diff.hostnames {
 			let current_side = match left { true => hostnames.0.clone(), false => hostnames.1.clone() };
 			let wrapped_hostnames = HostnamesWrapper(current_side);
-			let hostnames_str = format!("\n| Hostnames: {}", wrapped_hostnames.to_string());
+			let hostnames_str = format!("\t| Hostnames: {}\n", wrapped_hostnames.to_string());
 			report.push_str(&hostnames_str);
 		}
 		
-		ui.label(egui::RichText::new(report).strong().color(report_color));
+		ui.label(egui::RichText::new(report).color(report_color));
 	}
 }
 
