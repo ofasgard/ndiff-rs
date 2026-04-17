@@ -27,7 +27,7 @@ impl HostWrapper {
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct HostDiff {
 	pub title: String,
 	pub status: Option<(HostStatus,HostStatus)>,
@@ -107,7 +107,7 @@ impl HostDiff {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum HostDelta {
 	Changed(HostDiff),
 	Unchanged(Host),
@@ -300,7 +300,7 @@ impl fmt::Display for HostDiff {
 		if let Some(addresses) = &self.addresses {
 			let left = AddressesWrapper(addresses.0.clone());
 			let right = AddressesWrapper(addresses.1.clone());
-			write!(f, "| Addresses:{} => {}\n", left.to_string(), right.to_string())?;
+			write!(f, "| Addresses: {} => {}\n", left.to_string(), right.to_string())?;
 		}
 		
 		if let Some(hostnames) = &self.hostnames {

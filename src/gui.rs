@@ -8,7 +8,11 @@ use egui::Align;
 use egui::widgets::Separator;
 use rfd::FileDialog;
 
+use crate::host::HostDiff;
 use crate::host::HostDelta;
+use crate::host::PortsWrapper;
+use crate::host::AddressesWrapper;
+use crate::host::HostnamesWrapper;
 use nmap_xml_parser::NmapResults;
 
 pub fn run_gui() -> eframe::Result {
@@ -114,14 +118,55 @@ impl NDiffApp {
 	}
 	
 	fn render_deltas(&mut self, left: bool, ui: &mut egui::Ui) {
-		let index = match left {
-			true => 0,
-			false => 1
+		for delta in &self.deltas {
+			match delta {
+				HostDelta::Changed(diff) => self.render_changed(diff, left, ui),
+				HostDelta::Unchanged(host) => todo!(), //TODO
+				HostDelta::Gone(host) => todo!(), //TODO
+				HostDelta::New(host) => todo!() //TODO
+			}
+		}
+	}
+	
+	fn render_changed(&self, diff: &HostDiff, left: bool, ui: &mut egui::Ui) {
+		
+		let report_color = match left {
+			true => egui::Color32::from_rgb(0x0, 0x80, 0x0),
+			false => egui::Color32::from_rgb(0x80, 0x0, 0x0)
 		};
 	
-		for delta in &self.deltas {
-			ui.label(format!("{}", delta.to_string())); // TODO actually display data for left or right diff
+		ui.add(Separator::default().spacing(16.0));
+		
+		let mut report : String = format!("{}", diff.title);
+		
+		if let Some(status) = &diff.status {
+			let current_side = match left { true => status.0.clone(), false => status.1.clone() };
+			let status_str = format!("\n| Status: {} ({})", current_side.state.to_string(), current_side.reason);
+			report.push_str(&status_str);
 		}
+		
+		if let Some(ports) = &diff.ports {
+			let current_side = match left { true => ports.0.clone(), false => ports.1.clone() };
+			let wrapped_ports = PortsWrapper(current_side);
+			let ports_str = format!("\n| Ports: {}", wrapped_ports.to_string());
+			report.push_str(&ports_str);
+		}
+		
+		if let Some(addresses) = &diff.addresses {
+			let current_side = match left { true => addresses.0.clone(), false => addresses.1.clone() };
+			let wrapped_addresses = AddressesWrapper(current_side);
+			let addresses_str = format!("\n| Addresses: {}", wrapped_addresses.to_string());
+			report.push_str(&addresses_str);
+		}
+		
+		if let Some(hostnames) = &diff.hostnames {
+			let current_side = match left { true => hostnames.0.clone(), false => hostnames.1.clone() };
+			let wrapped_hostnames = HostnamesWrapper(current_side);
+			let hostnames_str = format!("\n| Hostnames: {}", wrapped_hostnames.to_string());
+			report.push_str(&hostnames_str);
+		}
+		
+		ui.label(egui::RichText::new(report).strong().color(report_color));
 	}
 }
 
