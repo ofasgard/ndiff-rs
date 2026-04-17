@@ -6,6 +6,7 @@ use eframe::egui;
 use egui::Layout;
 use egui::Align;
 use egui::Grid;
+use egui::ScrollArea;
 use egui::widgets::Separator;
 use rfd::FileDialog;
 
@@ -127,28 +128,30 @@ impl NDiffApp {
 	}
 	
 	fn render_deltas(&mut self, ui: &mut egui::Ui) {
-		Grid::new("delta_grid").show(ui, |ui| {
-			for delta in &self.deltas {
-				match delta {
-					HostDelta::Changed(diff) => { 
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, true, ui) }); 
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, false, ui) }); 
-					},
-					HostDelta::Unchanged(host) => {
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
-					},
-					HostDelta::Gone(host) => {
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, true, ui) }); 
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, false, ui) }); 						
-					},
-					HostDelta::New(host) => {
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, true, ui) }); 
-						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, false, ui) }); 		
-					}
-				};
-				ui.end_row();
-			}
+		ScrollArea::vertical().show(ui, |ui| {
+			Grid::new("delta_grid").show(ui, |ui| {
+				for delta in &self.deltas {
+					match delta {
+						HostDelta::Changed(diff) => { 
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, true, ui) }); 
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, false, ui) }); 
+						},
+						HostDelta::Unchanged(host) => {
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
+						},
+						HostDelta::Gone(host) => {
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, true, ui) }); 
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, false, ui) }); 						
+						},
+						HostDelta::New(host) => {
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, true, ui) }); 
+							ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, false, ui) }); 		
+						}
+					};
+					ui.end_row();
+				}
+			});
 		});
 	}
 	
