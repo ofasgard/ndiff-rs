@@ -5,6 +5,7 @@ use chrono::DateTime;
 use eframe::egui;
 use egui::Layout;
 use egui::Align;
+use egui::Grid;
 use egui::widgets::Separator;
 use rfd::FileDialog;
 
@@ -66,12 +67,7 @@ impl eframe::App for NDiffApp {
 							}
 						}
 					};
-					if self.processed { 
-						self.render_deltas(true, ui); 
-					}
 				});
-				
-				ui.add(Separator::default().spacing(16.0));
 				
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
 					ui.set_width(max_width / 2.0);
@@ -87,15 +83,16 @@ impl eframe::App for NDiffApp {
 							}
 						}
 					};
-					if self.processed {
-						self.render_deltas(false, ui);
-					}
 				});
 			});
 			
 			if self.left_scan.is_some() && self.right_scan.is_some() && !self.processed {
 				self.deltas = HostDelta::from_scans(&self.left_scan.clone().unwrap(), &self.right_scan.clone().unwrap());
 				self.processed = true;
+			}
+			
+			if self.processed {
+				self.render_deltas(ui);
 			}
 		});
 	}
@@ -106,30 +103,48 @@ impl NDiffApp {
 		let content = match fs::read_to_string(path) {
 			Ok(x) => x,
 			Err(_) => {
-				return None; // TODO display some error
+				return None; // TODO display some error for "cannot read file"
 			}
 		};
 		
 		match NmapResults::parse(&content) {
 			Ok(x) => Some(x),
 			Err(_) => {
-				None // TODO display some error
+				None // TODO display some error for "cannot parse scan"
 			}
 		}
 	}
 	
-	fn render_deltas(&mut self, left: bool, ui: &mut egui::Ui) {
-		for delta in &self.deltas {
-			match delta {
-				HostDelta::Changed(diff) => self.render_changed(diff, left, ui),
-				HostDelta::Unchanged(host) => self.render_unchanged(host, ui),
-				HostDelta::Gone(host) => self.render_gone(host, left, ui),
-				HostDelta::New(host) => self.render_new(host, left, ui)
+	fn render_deltas(&mut self, ui: &mut egui::Ui) {
+		Grid::new("delta_grid").show(ui, |ui| {
+			for delta in &self.deltas {
+				match delta {
+					HostDelta::Changed(diff) => { 
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, true, ui) }); 
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_changed(diff, false, ui) }); 
+					},
+					HostDelta::Unchanged(host) => {
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_unchanged(host, ui) }); 
+					},
+					HostDelta::Gone(host) => {
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, true, ui) }); 
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_gone(host, false, ui) }); 						
+					},
+					HostDelta::New(host) => {
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, true, ui) }); 
+						ui.with_layout(Layout::top_down(Align::TOP), |ui| { self.render_new(host, false, ui) }); 		
+					}
+				};
+				ui.end_row();
 			}
-		}
+		});
 	}
 	
 	fn render_changed(&self, diff: &HostDiff, left: bool, ui: &mut egui::Ui) {
+		let max_width : f32 = ui.ctx().content_rect().max.x;
+		ui.set_width(max_width / 2.0);
+	
 		let report_color = match left {
 			true => egui::Color32::from_rgb(0x0, 0x80, 0x0),
 			false => egui::Color32::from_rgb(0x80, 0x0, 0x0)
@@ -171,6 +186,9 @@ impl NDiffApp {
 	}
 	
 	fn render_unchanged(&self, host: &Host, ui: &mut egui::Ui) {
+		let max_width : f32 = ui.ctx().content_rect().max.x;
+		ui.set_width(max_width / 2.0);
+	
 		let report_color = egui::Color32::from_rgb(0x0, 0x80, 0x0);
 		
 		let wrapped_host = HostWrapper(host.clone());
@@ -185,6 +203,9 @@ impl NDiffApp {
 	}
 	
 	fn render_gone(&self, host: &Host, left: bool, ui: &mut egui::Ui) {
+		let max_width : f32 = ui.ctx().content_rect().max.x;
+		ui.set_width(max_width / 2.0);
+	
 		let report_color = match left {
 			true => egui::Color32::from_rgb(0x0, 0x80, 0x0),
 			false => egui::Color32::from_rgb(0x80, 0x0, 0x0)
@@ -206,6 +227,9 @@ impl NDiffApp {
 	}
 	
 	fn render_new(&self, host: &Host, left: bool, ui: &mut egui::Ui) {
+		let max_width : f32 = ui.ctx().content_rect().max.x;
+		ui.set_width(max_width / 2.0);
+	
 		let report_color = match left {
 			true => egui::Color32::from_rgb(0x80, 0x0, 0x0),
 			false => egui::Color32::from_rgb(0x0, 0x80, 0x0)
