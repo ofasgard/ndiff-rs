@@ -33,7 +33,8 @@ struct NDiffApp {
 			left_scan: Option<NmapResults>,
 			right_scan: Option<NmapResults>,
 			deltas: Vec<HostDelta>,
-			processed: bool
+			processed: bool,
+			err_msg : Option<String>
 }
 
 impl Default for NDiffApp {
@@ -42,7 +43,8 @@ impl Default for NDiffApp {
 			left_scan: None,
 			right_scan: None,
 			deltas: Vec::new(),
-			processed: false
+			processed: false,
+			err_msg: None
 		}
 	}
 }
@@ -91,6 +93,11 @@ impl eframe::App for NDiffApp {
 				self.processed = true;
 			}
 			
+			if let Some(err_msg) = &self.err_msg {
+				let err_color = egui::Color32::from_rgb(0x80, 0x0, 0x0);
+				ui.label(egui::RichText::new(err_msg).color(err_color));
+			}
+			
 			if self.processed {
 				self.render_deltas(ui);
 			}
@@ -100,17 +107,21 @@ impl eframe::App for NDiffApp {
 
 impl NDiffApp {
 	fn load_scan(&mut self, path: String, _ui: &mut egui::Ui) -> Option<NmapResults> {
+		self.err_msg = None;
+	
 		let content = match fs::read_to_string(path) {
 			Ok(x) => x,
 			Err(_) => {
-				return None; // TODO display some error for "cannot read file"
+				self.err_msg = Some(format!("Error reading the specified file."));
+				return None;
 			}
 		};
 		
 		match NmapResults::parse(&content) {
 			Ok(x) => Some(x),
 			Err(_) => {
-				None // TODO display some error for "cannot parse scan"
+				self.err_msg = Some(format!("Error parsing the specified file as an XML Nmap scan."));
+				return None;
 			}
 		}
 	}
