@@ -10,10 +10,12 @@ use rfd::FileDialog;
 
 use crate::host::HostDiff;
 use crate::host::HostDelta;
+use crate::host::HostWrapper;
 use crate::host::PortsWrapper;
 use crate::host::AddressesWrapper;
 use crate::host::HostnamesWrapper;
 use nmap_xml_parser::NmapResults;
+use nmap_xml_parser::host::Host;
 
 pub fn run_gui() -> eframe::Result {
 	let mut options = eframe::NativeOptions::default();
@@ -49,9 +51,6 @@ impl eframe::App for NDiffApp {
 		let max_width : f32 = ui.ctx().content_rect().max.x;
 	
 		egui::CentralPanel::default().show_inside(ui, |ui| {
-			ui.label("Load two Nmap XML scans!");
-			ui.add(Separator::default().spacing(32.0));
-			
 			ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
 				ui.with_layout(Layout::top_down(Align::TOP), |ui| {
 					ui.set_width(max_width / 2.0);
@@ -123,15 +122,14 @@ impl NDiffApp {
 		for delta in &self.deltas {
 			match delta {
 				HostDelta::Changed(diff) => self.render_changed(diff, left, ui),
-				HostDelta::Unchanged(host) => todo!(), //TODO
-				HostDelta::Gone(host) => todo!(), //TODO
-				HostDelta::New(host) => todo!() //TODO
+				HostDelta::Unchanged(host) => self.render_unchanged(host, ui),
+				HostDelta::Gone(host) => self.render_gone(host, left, ui),
+				HostDelta::New(host) => todo!("new") //TODO
 			}
 		}
 	}
 	
 	fn render_changed(&self, diff: &HostDiff, left: bool, ui: &mut egui::Ui) {
-		
 		let report_color = match left {
 			true => egui::Color32::from_rgb(0x0, 0x80, 0x0),
 			false => egui::Color32::from_rgb(0x80, 0x0, 0x0)
@@ -144,29 +142,64 @@ impl NDiffApp {
 		
 		if let Some(status) = &diff.status {
 			let current_side = match left { true => status.0.clone(), false => status.1.clone() };
-			let status_str = format!("\t| Status: {} ({})\n", current_side.state.to_string(), current_side.reason);
+			let status_str = format!("| Status: {} ({})\n", current_side.state.to_string(), current_side.reason);
 			report.push_str(&status_str);
 		}
 		
 		if let Some(ports) = &diff.ports {
 			let current_side = match left { true => ports.0.clone(), false => ports.1.clone() };
 			let wrapped_ports = PortsWrapper(current_side);
-			let ports_str = format!("\t| Ports: {}\n", wrapped_ports.to_string());
+			let ports_str = format!("| Ports: {}\n", wrapped_ports.to_string());
 			report.push_str(&ports_str);
 		}
 		
 		if let Some(addresses) = &diff.addresses {
 			let current_side = match left { true => addresses.0.clone(), false => addresses.1.clone() };
 			let wrapped_addresses = AddressesWrapper(current_side);
-			let addresses_str = format!("\t| Addresses: {}\n", wrapped_addresses.to_string());
+			let addresses_str = format!("| Addresses: {}\n", wrapped_addresses.to_string());
 			report.push_str(&addresses_str);
 		}
 		
 		if let Some(hostnames) = &diff.hostnames {
 			let current_side = match left { true => hostnames.0.clone(), false => hostnames.1.clone() };
 			let wrapped_hostnames = HostnamesWrapper(current_side);
-			let hostnames_str = format!("\t| Hostnames: {}\n", wrapped_hostnames.to_string());
+			let hostnames_str = format!("| Hostnames: {}\n", wrapped_hostnames.to_string());
 			report.push_str(&hostnames_str);
+		}
+		
+		ui.label(egui::RichText::new(report).color(report_color));
+	}
+	
+	fn render_unchanged(&self, host: &Host, ui: &mut egui::Ui) {
+		let report_color = egui::Color32::from_rgb(0x0, 0x80, 0x0);
+		
+		let wrapped_host = HostWrapper(host.clone());
+		
+		ui.add(Separator::default().spacing(16.0));
+		ui.label(egui::RichText::new(format!("{}", wrapped_host.get_title())).underline().color(report_color));
+		
+		let mut report : String = String::new();
+		report.push_str("(NO CHANGE)");
+		
+		ui.label(egui::RichText::new(report).color(report_color));
+	}
+	
+	fn render_gone(&self, host: &Host, left: bool, ui: &mut egui::Ui) {
+		let report_color = match left {
+			true => egui::Color32::from_rgb(0x0, 0x80, 0x0),
+			false => egui::Color32::from_rgb(0x80, 0x0, 0x0)
+		};
+		
+		let wrapped_host = HostWrapper(host.clone());
+		
+		ui.add(Separator::default().spacing(16.0));
+		ui.label(egui::RichText::new(format!("{}", wrapped_host.get_title())).underline().color(report_color));
+		
+		let mut report : String = String::new();
+		
+		match left {
+			true => report.push_str(&wrapped_host.to_string()),
+			false => report.push_str("(HOST NOT PRESENT)")
 		}
 		
 		ui.label(egui::RichText::new(report).color(report_color));

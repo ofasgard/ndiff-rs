@@ -14,7 +14,7 @@ pub struct AddressesWrapper(pub Vec<Address>);
 pub struct HostnamesWrapper(pub Vec<Hostname>);
 
 impl HostWrapper {
-	fn get_title(&self) -> String {
+	pub fn get_title(&self) -> String {
 		let host_name = match self.0.host_names().next() { Some(x) => x.name.to_string(), None => "<no hostname>".to_string() };
 		let address = match self.0.addresses().next() {
 			Some(addr) => match addr {
