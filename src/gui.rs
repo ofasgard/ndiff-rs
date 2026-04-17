@@ -124,7 +124,7 @@ impl NDiffApp {
 				HostDelta::Changed(diff) => self.render_changed(diff, left, ui),
 				HostDelta::Unchanged(host) => self.render_unchanged(host, ui),
 				HostDelta::Gone(host) => self.render_gone(host, left, ui),
-				HostDelta::New(host) => todo!("new") //TODO
+				HostDelta::New(host) => self.render_new(host, left, ui)
 			}
 		}
 	}
@@ -199,7 +199,28 @@ impl NDiffApp {
 		
 		match left {
 			true => report.push_str(&wrapped_host.to_string()),
-			false => report.push_str("(HOST NOT PRESENT)")
+			false => report.push_str("(HOST GONE)")
+		}
+		
+		ui.label(egui::RichText::new(report).color(report_color));
+	}
+	
+	fn render_new(&self, host: &Host, left: bool, ui: &mut egui::Ui) {
+		let report_color = match left {
+			true => egui::Color32::from_rgb(0x80, 0x0, 0x0),
+			false => egui::Color32::from_rgb(0x0, 0x80, 0x0)
+		};
+		
+		let wrapped_host = HostWrapper(host.clone());
+		
+		ui.add(Separator::default().spacing(16.0));
+		ui.label(egui::RichText::new(format!("{}", wrapped_host.get_title())).underline().color(report_color));
+		
+		let mut report : String = String::new();
+		
+		match left {
+			true => report.push_str("(NEW HOST)"),
+			false => report.push_str(&wrapped_host.to_string())
 		}
 		
 		ui.label(egui::RichText::new(report).color(report_color));
