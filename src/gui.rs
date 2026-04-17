@@ -31,6 +31,8 @@ pub fn run_gui() -> eframe::Result {
 }
 
 struct NDiffApp {
+			left_path: String,
+			right_path: String,
 			left_scan: Option<NmapResults>,
 			right_scan: Option<NmapResults>,
 			deltas: Vec<HostDelta>,
@@ -41,6 +43,8 @@ struct NDiffApp {
 impl Default for NDiffApp {
 	fn default() -> Self {
 		Self {
+			left_path: String::new(),
+			right_path: String::new(),
 			left_scan: None,
 			right_scan: None,
 			deltas: Vec::new(),
@@ -61,12 +65,12 @@ impl eframe::App for NDiffApp {
 					ui.heading("First Scan");
 					ui.add_space(32.0);
 					match &self.left_scan {
-						Some(_) => { ui.label(format!("Scan loaded!\nScan Time: {}", get_time(&self.left_scan.clone().unwrap()))); },
+						Some(_) => { ui.label(format!("Scan loaded!\nScan Path: {}\nScan Time: {}", &self.left_path, get_time(&self.left_scan.clone().unwrap()))); },
 						None => { 
 							ui.label("Waiting for a scan...");
 							if ui.button("Open file...").clicked() && let Some(path) = FileDialog::new().pick_file() {
-								let path_str = path.display().to_string();
-								self.left_scan = self.load_scan(path_str, ui);
+								self.left_path = path.display().to_string();
+								self.left_scan = self.load_scan(self.left_path.clone(), ui);
 							}
 						}
 					};
@@ -77,12 +81,12 @@ impl eframe::App for NDiffApp {
 					ui.heading("Second Scan");
 					ui.add_space(32.0);
 					match &self.right_scan {
-						Some(_) => { ui.label(format!("Scan loaded!\nScan Time: {}", get_time(&self.right_scan.clone().unwrap()))); },
+						Some(_) => { ui.label(format!("Scan loaded!\nScan Path: {}\nScan Time: {}", &self.right_path, get_time(&self.right_scan.clone().unwrap()))); },
 						None => { 
 							ui.label("Waiting for a scan...");
 							if ui.button("Open file...").clicked() && let Some(path) = FileDialog::new().pick_file() {
-								let path_str = path.display().to_string();
-								self.right_scan = self.load_scan(path_str, ui);
+								self.right_path = path.display().to_string();
+								self.right_scan = self.load_scan(self.right_path.clone(), ui);
 							}
 						}
 					};
